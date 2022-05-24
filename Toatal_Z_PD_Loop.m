@@ -36,19 +36,27 @@ D =[0;0];
 
 % From setpoints time we can calc dt=t2-t1;
 dt=0.0501;
-ZV_Z_BodyVel
 
-P_d = 0.6;
-P_C(1)=0.8;
+%P_d = 0.6;
+P_d = ZSel_Pose_Z;
+P_C(1)=0.8;   %%%P_C(1) is the Initial Current position
 e_p(1) =0;
-Kp = 1.3131;
-Kd = 0.032893;
+Kp = 1.3131;%1.3131;
+Kd = 0.32893;%0.032893;
 X_est = zeros([2, size(ZSel_Pose_Z, 1)]);
-X_est(1,1)=1;
-for j= 2:1781%size()
-    e_k(j-1,1) = P_d - P_C(1,j-1);
+X_est(1,1)=0.8;     %%Inital estimated position
+for j= 2:size(ZSel_Pose_Z)
+    %e_k(j-1,1) = P_d - P_C(1,j-1);
+    e_k(j-1,1) = P_d(j-1,1) - P_C(1,j-1);
     e_p(j,1) = e_k(j-1,1);
     U(j-1,1) = input_mesu(e_k(j-1,1), e_p(j-1,1), Kp, Kd);
+    %Limit the input between -0.9 to +0.9
+        if U(j-1,1)>= 1
+            U(j-1,1)= 0.99;
+        end
+        if U(j-1,1)<= -1
+            U(j-1,1)= -0.99;
+        end
     Vk_z(j-1,1) = vel_mesu_z(ZV_Z_BodyVel(j-1,1), U(j-1,1));
     VinW(1,j-1) = velto_w(Zwrld_qw(j-1,1), Zwrld_qx(j-1,1), Zwrld_qy(j-1,1), Zwrld_qz(j-1,1), Vk_z(j-1,1));
     X_est(2,j-1) = VinW(1,j-1);
@@ -65,23 +73,23 @@ subplot(2,1,1)
 hold on
 plot(U ,'R', 'LineWidth', 3)
 plot(ZJoy_cmd_Z, 'B', 'LineWidth', 2)
-ylim([-1,1])
+% ylim([-1,1])
 % compare(Bdy.Vely, setpoint.vely)
 xlabel('Time_ Step (0.05)')
 ylabel('Amplitude')
 
-legend('PD-Tuned Input', 'Manual-Joy_ Inputs' ,'Location','southwest');
+legend('PD-Tuned Input', 'Manual-Joy_ Inputs' ,'Location','northeast');
 title('Joy_ Inputs actual Vs Manual')
 hold off
-ZSel_Pose_Z
+
 subplot(2,1,2)
 hold on
 plot(X_est(1,:) ,'R', 'LineWidth', 3) %Time Vs Position of X
 plot(ZSel_Pose_Z , 'B', 'LineWidth', 2)
-ylim([-1.2,1.2])
+% ylim([-1.2,1.2])
 xlabel('Time_ Step (0.05)')
 ylabel('Position (m)')
-legend('Esti Pose_ Z with New Input', 'True Pose_ Z-Maual Input' ,'Location','southwest');
+legend('Esti Pose_ Z with New Input', 'True Pose_ Z-Maual Input' ,'Location','northeast');
 title('Esti Pose_ Z & True Pose_ Z' )
 hold off
 
@@ -98,12 +106,12 @@ function Vk_z = vel_mesu_z(ZV_Z_BodyVel, U)  % This would be in Body frame y (me
          Vk_z = (0.1912/(1-0.818*ZV_Z_BodyVel))*U;        
 end
 
-function VinW= velto_w(wrld_qw, wrld_qx, wrld_qy, wrld_qz, Vk_z)
+function VinW= velto_w(Zwrld_qw, Zwrld_qx, Zwrld_qy, Zwrld_qz, Vk_z)
     %%%Rotation Matrix
-    quat = [wrld_qw, wrld_qx, wrld_qy, wrld_qz];
+    quat = [Zwrld_qw, Zwrld_qx, Zwrld_qy, Zwrld_qz];
     eul = quat2eul(quat);
-    %onlyyaw = [eul(3), eul(2), eul(1)];
-    onlyyaw = [eul(3), 0, 0];
+    onlyyaw = [eul(3), eul(2), eul(1)];
+    %onlyyaw = [eul(3), 0, 0];
     R= eul2rotm(onlyyaw);             %%%%R_W_b
     Vw= R*[0; 0; Vk_z]; %%%% Convert to World_V
     VinW=zeros(1,1);
