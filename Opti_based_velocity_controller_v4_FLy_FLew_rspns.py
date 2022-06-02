@@ -10,11 +10,10 @@ from mavros_msgs.srv import SetMode, CommandBool
 from std_srvs.srv import SetBool
 from std_msgs.msg import Header
 
-#from sensor_msgs.msg import ChannelFloat32
 from mavros_msgs.msg import RCIn
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose,PoseStamped, Quaternion, TwistStamped
-from px4_control_msgs.msg import Setpoint             ##Needs to import this package of create msg file
+from px4_control_msgs.msg import Setpoint             
 from mavros_msgs.msg import PositionTarget, State
 
 
@@ -70,8 +69,8 @@ class JoyOptiNode():
 
         # Subscribers
         self.state_sub = rp.Subscriber('/mavros/state', State, self.stateCallback, queue_size=1)
-        self.pose_sub = rp.Subscriber('/mavros/local_position/odom', Odometry, self.pose_callback, queue_size=1)  ##datatype/md5
-        self.rc_sub = rp.Subscriber('/mavros/rc/in', RCIn, self.rcCallback, queue_size=1)                     ##datatype/md5
+        self.pose_sub = rp.Subscriber('/mavros/local_position/odom', Odometry, self.pose_callback, queue_size=1)  
+        self.rc_sub = rp.Subscriber('/mavros/rc/in', RCIn, self.rcCallback, queue_size=1)                   
 
         # Publishers
         self.vel_cmd_pub = rp.Publisher('/mavros/setpoint_raw/local', PositionTarget, queue_size=1)
@@ -83,7 +82,6 @@ class JoyOptiNode():
         rp.loginfo('Checking that services are available')
         rp.wait_for_service('/mavros/set_mode')
         rp.wait_for_service('/mavros/cmd/arming')
-        #rp.wait_for_service('/enable_controller')
         rp.loginfo('MavROS services are available')
 
         # Velocity cmds
@@ -103,13 +101,13 @@ class JoyOptiNode():
         self.mode = None
     
         # Set up Controllers
-        self.kp_x = 0.18
-        self.kd_x = 0.15
-        self.kp_y = 0.18
-        self.kd_y = 0.15
-        self.kp_z = 0.3
-        self.kd_z = 0.2
-        self.kp_w = 0.15
+        self.kp_x = 1.21
+        self.kd_x = 0.2816
+        self.kp_y = 1.218
+        self.kd_y = 0.2325
+        self.kp_z = 0.9811
+        self.kd_z = 0.0245
+        self.kp_w = 0.3
         
         self.Ex = 0.0
         self.Ey = 0.0
@@ -134,11 +132,8 @@ class JoyOptiNode():
 
         self.desired_x = 0.0
         self.desired_y = 0.0
-        self.desired_z = 1.5
-
-
-        #time.sleep(1.0)
-
+        self.desired_z = 0.8
+    
 
         t = threading.Thread(target=self.commandPublisher)
         t.start()
@@ -155,8 +150,8 @@ class JoyOptiNode():
         self.mode = msg.mode
 
     def rcCallback(self, msg):
-        self.arm_bttn = msg.channels[5]
-        self.ofb_bttn = msg.channels[10]
+        self.arm_bttn = msg.channels[4]
+        self.ofb_bttn = msg.channels[9]
         
         
     #Postion CallBack
