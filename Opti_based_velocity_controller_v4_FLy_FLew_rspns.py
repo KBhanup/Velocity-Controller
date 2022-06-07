@@ -13,7 +13,7 @@ from std_msgs.msg import Header
 from mavros_msgs.msg import RCIn
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Pose,PoseStamped, Quaternion, TwistStamped
-from px4_control_msgs.msg import Setpoint             
+from px4_control_msgs.msg import Setpoint             ##Needs to import this package of create msg file
 from mavros_msgs.msg import PositionTarget, State
 
 
@@ -52,8 +52,8 @@ def to_rpy(qw, qx, qy, qz):
     return [r, p, y]
 
 def rotate_vector(x, y, angle):
-    x_r = x * math.cos(angle) - y * math.sin(angle)
-    y_r = x * math.sin(angle) + y * math.cos(angle)
+    x_r = x * math.cos(angle) + y * math.sin(angle)
+    y_r = -x * math.sin(angle) + y * math.cos(angle)
     return [x_r, y_r]
 
 class JoyOptiNode():
@@ -69,8 +69,8 @@ class JoyOptiNode():
 
         # Subscribers
         self.state_sub = rp.Subscriber('/mavros/state', State, self.stateCallback, queue_size=1)
-        self.pose_sub = rp.Subscriber('/mavros/local_position/odom', Odometry, self.pose_callback, queue_size=1)  
-        self.rc_sub = rp.Subscriber('/mavros/rc/in', RCIn, self.rcCallback, queue_size=1)                   
+        self.pose_sub = rp.Subscriber('/mavros/local_position/odom', Odometry, self.pose_callback, queue_size=1)  ##datatype/md5
+        self.rc_sub = rp.Subscriber('/mavros/rc/in', RCIn, self.rcCallback, queue_size=1)                     ##datatype/md5
 
         # Publishers
         self.vel_cmd_pub = rp.Publisher('/mavros/setpoint_raw/local', PositionTarget, queue_size=1)
@@ -82,6 +82,7 @@ class JoyOptiNode():
         rp.loginfo('Checking that services are available')
         rp.wait_for_service('/mavros/set_mode')
         rp.wait_for_service('/mavros/cmd/arming')
+        #rp.wait_for_service('/enable_controller')
         rp.loginfo('MavROS services are available')
 
         # Velocity cmds
@@ -132,8 +133,11 @@ class JoyOptiNode():
 
         self.desired_x = 0.0
         self.desired_y = 0.0
-        self.desired_z = 0.8
-    
+        self.desired_z = 1.5
+
+
+        #time.sleep(1.0)
+
 
         t = threading.Thread(target=self.commandPublisher)
         t.start()
